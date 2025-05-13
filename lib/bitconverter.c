@@ -277,7 +277,7 @@ void BitConverter_DoubleToBytes(double value, uint8_t* buffer, size_t* index)
 * 返回参数：
 ****************************************************************************************************
 */
-void BitConverter_BytesToInt16(int16_t* value, const uint8_t* buffer, size_t* index)
+void BitConverter_BytesToInt16(int16_t* value, uint8_t* buffer, size_t startIndex)
 {
 	union {
 		uint8_t Buf[2];
@@ -285,15 +285,14 @@ void BitConverter_BytesToInt16(int16_t* value, const uint8_t* buffer, size_t* in
 	} U;
 
 	if (Endian_isBigEndian() == true) {
-		U.Buf[0] = buffer[index[0] + 0];
-		U.Buf[1] = buffer[index[0] + 1];
+		U.Buf[0] = buffer[startIndex + 0];
+		U.Buf[1] = buffer[startIndex + 1];
 	} else {
-		U.Buf[0] = buffer[index[0] + 1];
-		U.Buf[1] = buffer[index[0] + 0];
+		U.Buf[0] = buffer[startIndex + 1];
+		U.Buf[1] = buffer[startIndex + 0];
 	}
 
 	value[0] = U.Value;
-	index[0] += 2;
 }
 
 /*!
@@ -305,7 +304,7 @@ void BitConverter_BytesToInt16(int16_t* value, const uint8_t* buffer, size_t* in
 * 返回参数：
 ****************************************************************************************************
 */
-void BitConverter_BytesToInt32(int32_t* value, const uint8_t* buffer, size_t* index)
+void BitConverter_BytesToInt32(int32_t* value, uint8_t* buffer, size_t startIndex)
 {
 	union {
 		uint8_t Buf[4];
@@ -313,19 +312,18 @@ void BitConverter_BytesToInt32(int32_t* value, const uint8_t* buffer, size_t* in
 	} U;
 
 	if (Endian_isBigEndian() == true) {
-		U.Buf[0] = buffer[index[0] + 0];
-		U.Buf[1] = buffer[index[0] + 1];
-		U.Buf[2] = buffer[index[0] + 2];
-		U.Buf[3] = buffer[index[0] + 3];
+		U.Buf[0] = buffer[startIndex + 0];
+		U.Buf[1] = buffer[startIndex + 1];
+		U.Buf[2] = buffer[startIndex + 2];
+		U.Buf[3] = buffer[startIndex + 3];
 	} else {
-		U.Buf[0] = buffer[index[0] + 3];
-		U.Buf[1] = buffer[index[0] + 2];
-		U.Buf[2] = buffer[index[0] + 1];
-		U.Buf[3] = buffer[index[0] + 0];
+		U.Buf[0] = buffer[startIndex + 3];
+		U.Buf[1] = buffer[startIndex + 2];
+		U.Buf[2] = buffer[startIndex + 1];
+		U.Buf[3] = buffer[startIndex + 0];
 	}
 
 	value[0] = U.Value;
-	index[0] += 4;
 }
 
 /*!
@@ -337,7 +335,7 @@ void BitConverter_BytesToInt32(int32_t* value, const uint8_t* buffer, size_t* in
 * 返回参数：
 ****************************************************************************************************
 */
-void BitConverter_BytesToUInt16(uint16_t* value, const uint8_t* buffer, size_t* index)
+void BitConverter_BytesToUInt16(uint16_t* value, const uint8_t* buffer, size_t startIndex)
 {
 	union {
 		uint8_t	 Buf[2];
@@ -345,15 +343,14 @@ void BitConverter_BytesToUInt16(uint16_t* value, const uint8_t* buffer, size_t* 
 	} U;
 
 	if (Endian_isBigEndian() == true) {
-		U.Buf[0] = buffer[index[0] + 0];
-		U.Buf[1] = buffer[index[0] + 1];
+		U.Buf[0] = buffer[startIndex + 0];
+		U.Buf[1] = buffer[startIndex + 1];
 	} else {
-		U.Buf[0] = buffer[index[0] + 1];
-		U.Buf[1] = buffer[index[0] + 0];
+		U.Buf[0] = buffer[startIndex + 1];
+		U.Buf[1] = buffer[startIndex + 0];
 	}
 
 	value[0] = U.Value;
-	index[0] += 2;
 }
 
 /*!
@@ -365,7 +362,7 @@ void BitConverter_BytesToUInt16(uint16_t* value, const uint8_t* buffer, size_t* 
 * 返回参数：
 ****************************************************************************************************
 */
-void BitConverter_BytesToUInt32(uint32_t* value, const uint8_t* buffer, size_t* index)
+void BitConverter_BytesToUInt32(uint32_t* value, const uint8_t* buffer, size_t startIndex)
 {
 	union {
 		uint8_t	 Buf[4];
@@ -373,19 +370,18 @@ void BitConverter_BytesToUInt32(uint32_t* value, const uint8_t* buffer, size_t* 
 	} U;
 
 	if (Endian_isBigEndian() == true) {
-		U.Buf[0] = buffer[index[0] + 0];
-		U.Buf[1] = buffer[index[0] + 1];
-		U.Buf[2] = buffer[index[0] + 2];
-		U.Buf[3] = buffer[index[0] + 3];
+		U.Buf[0] = buffer[startIndex + 0];
+		U.Buf[1] = buffer[startIndex + 1];
+		U.Buf[2] = buffer[startIndex + 2];
+		U.Buf[3] = buffer[startIndex + 3];
 	} else {
-		U.Buf[0] = buffer[index[0] + 3];
-		U.Buf[1] = buffer[index[0] + 2];
-		U.Buf[2] = buffer[index[0] + 1];
-		U.Buf[3] = buffer[index[0] + 0];
+		U.Buf[0] = buffer[startIndex + 3];
+		U.Buf[1] = buffer[startIndex + 2];
+		U.Buf[2] = buffer[startIndex + 1];
+		U.Buf[3] = buffer[startIndex + 0];
 	}
 
 	value[0] = U.Value;
-	index[0] += 4;
 }
 
 /*!
@@ -397,7 +393,7 @@ void BitConverter_BytesToUInt32(uint32_t* value, const uint8_t* buffer, size_t* 
 * 返回参数：
 ****************************************************************************************************
 */
-void BitConverter_BytesToSingle(float* value, const uint8_t* buffer, size_t* index)
+void BitConverter_BytesToSingle(float* value, const uint8_t* buffer, size_t startIndex)
 {
 	union {
 		uint8_t Buf[4];
@@ -405,19 +401,18 @@ void BitConverter_BytesToSingle(float* value, const uint8_t* buffer, size_t* ind
 	} U;
 
 	if (Endian_isBigEndian() == true) {
-		U.Buf[0] = buffer[index[0] + 0];
-		U.Buf[1] = buffer[index[0] + 1];
-		U.Buf[2] = buffer[index[0] + 2];
-		U.Buf[3] = buffer[index[0] + 3];
+		U.Buf[0] = buffer[startIndex + 0];
+		U.Buf[1] = buffer[startIndex + 1];
+		U.Buf[2] = buffer[startIndex + 2];
+		U.Buf[3] = buffer[startIndex + 3];
 	} else {
-		U.Buf[0] = buffer[index[0] + 3];
-		U.Buf[1] = buffer[index[0] + 2];
-		U.Buf[2] = buffer[index[0] + 1];
-		U.Buf[3] = buffer[index[0] + 0];
+		U.Buf[0] = buffer[startIndex + 3];
+		U.Buf[1] = buffer[startIndex + 2];
+		U.Buf[2] = buffer[startIndex + 1];
+		U.Buf[3] = buffer[startIndex + 0];
 	}
 
 	value[0] = U.Value;
-	index[0] += 4;
 }
 
 /*!
@@ -429,7 +424,7 @@ void BitConverter_BytesToSingle(float* value, const uint8_t* buffer, size_t* ind
 * 返回参数：
 ****************************************************************************************************
 */
-void BitConverter_BytesToDouble(double* value, const uint8_t* buffer, size_t* index)
+void BitConverter_BytesToDouble(double* value, const uint8_t* buffer, size_t startIndex)
 {
 	union {
 		uint8_t Buf[8];
@@ -437,29 +432,81 @@ void BitConverter_BytesToDouble(double* value, const uint8_t* buffer, size_t* in
 	} U;
 
 	if (Endian_isBigEndian() == true) {
-		U.Buf[0] = buffer[index[0] + 0];
-		U.Buf[1] = buffer[index[0] + 1];
-		U.Buf[2] = buffer[index[0] + 2];
-		U.Buf[3] = buffer[index[0] + 3];
-		U.Buf[4] = buffer[index[0] + 4];
-		U.Buf[5] = buffer[index[0] + 5];
-		U.Buf[6] = buffer[index[0] + 6];
-		U.Buf[7] = buffer[index[0] + 7];
+		U.Buf[0] = buffer[startIndex + 0];
+		U.Buf[1] = buffer[startIndex + 1];
+		U.Buf[2] = buffer[startIndex + 2];
+		U.Buf[3] = buffer[startIndex + 3];
+		U.Buf[4] = buffer[startIndex + 4];
+		U.Buf[5] = buffer[startIndex + 5];
+		U.Buf[6] = buffer[startIndex + 6];
+		U.Buf[7] = buffer[startIndex + 7];
 	}
 
 	else {
-		U.Buf[0] = buffer[index[0] + 7];
-		U.Buf[1] = buffer[index[0] + 6];
-		U.Buf[2] = buffer[index[0] + 5];
-		U.Buf[3] = buffer[index[0] + 4];
-		U.Buf[4] = buffer[index[0] + 3];
-		U.Buf[5] = buffer[index[0] + 2];
-		U.Buf[6] = buffer[index[0] + 1];
-		U.Buf[7] = buffer[index[0] + 0];
+		U.Buf[0] = buffer[startIndex + 7];
+		U.Buf[1] = buffer[startIndex + 6];
+		U.Buf[2] = buffer[startIndex + 5];
+		U.Buf[3] = buffer[startIndex + 4];
+		U.Buf[4] = buffer[startIndex + 3];
+		U.Buf[5] = buffer[startIndex + 2];
+		U.Buf[6] = buffer[startIndex + 1];
+		U.Buf[7] = buffer[startIndex + 0];
 	}
 
 	value[0] = U.Value;
-	index[0] += 8;
+}
+
+/*!
+****************************************************************************************************
+* 功能描述：
+* 注意事项：
+* 输入参数：
+* 输出参数：
+* 返回参数：
+****************************************************************************************************
+*/
+uint32_t BitConverter_BCD2Num(int len, const uint8_t value[], size_t offset)
+{
+	uint8_t	 tmp;
+	uint32_t result;
+
+	len /= 2; // 除以2，因为1个字节代表BCD2
+
+	result = 0;
+	for (int i = 0; i < len; i++) {
+		result *= 100;
+		tmp = value[i + offset] & 0xFF;
+		result += (tmp >> 4) * 10 + (tmp & 0x0F);
+	}
+
+	return result;
+}
+
+/*!
+****************************************************************************************************
+* 功能描述：
+* 注意事项：
+* 输入参数：
+* 输出参数：
+* 返回参数：
+****************************************************************************************************
+*/
+uint32_t BitConverter_Num2BCD(uint32_t num)
+{
+	uint32_t out  = 0;
+	uint32_t base = 1;
+
+	// the function can not change the num bigger than 99999999
+	if (num > 99999999) {
+		return 0xFFFFFFFF;
+	}
+
+	for (uint8_t i = 0; i < (sizeof(uint32_t) << 1); i++) {
+		out |= (((num / base) % 10) << (4 * i));
+		base *= 10;
+	}
+
+	return out;
 }
 
 /*!

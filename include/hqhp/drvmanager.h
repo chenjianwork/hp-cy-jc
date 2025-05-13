@@ -29,6 +29,15 @@ extern "C" {
 #define TMR_ID_NUMS	   64 // 秒软定时器个数上限
 #define MS_TMR_ID_NUMS 64 // 毫秒软定时器个数上限
 
+#define DRV_UART_BAUD2400	2400
+#define DRV_UART_BAUD4800	4800
+#define DRV_UART_BAUD9600	9600
+#define DRV_UART_BAUD19200	19200
+#define DRV_UART_BAUD38400	38400
+#define DRV_UART_BAUD57600	57600
+#define DRV_UART_BAUD115200 115200
+#define DRV_UART_BAUD230400 230400
+
 enum {
 	DRVID_LED_RUN = 0, // 运行指示灯
 	DRVID_LED_FAULT,   // 故障指示灯

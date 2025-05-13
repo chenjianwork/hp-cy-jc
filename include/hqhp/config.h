@@ -13,7 +13,8 @@
 
 // 秒定时器分配 ----------------------------------------------------------------------------------- //
 enum {
-	MS_TMR_ID_CAN_OnLine_1,
+	SMS_TMR_ID_CAN_OnLine_1,
+	MSEC_TMR_ID_ADS_WAIT,
 	TMR_ID_MAXIMUM
 };
 
@@ -34,6 +35,10 @@ enum {
 	MS_TMR_ID_CAN_OnLine,
 	MS_TMR_ID_100MS,
 	MS_TMR_ID_200MS,
+	MS_TMR_ID_RUNSTATE_CHECK_ONLINE,	// 运行状态检查在线使用
+	MS_TMR_ID_VDF_MODBUS_TIMEOUT,		// 变频器MODBUS通信超时使用
+	MS_TMR_ID_VDF_PID_TIMEOUT,				// 变频器超时使用
+	MSEC_TMR_ID_PS_OVPS,
 	MS_TMR_ID_MAXIMUM
 };
 
@@ -57,5 +62,34 @@ enum {
 #define CONFIG_UART_CanOpen_2				(DRVID_UART_5)
 #define CONFIG_UART_CanOpen_2_BAUDRATE	(19200)
 #define CONFIG_UART_CanOpen_2_PARITY		(kUART_PARITY_NONE)
+
+/* 压力变送器  PT2077----------------------------------------------------------------------------------- */
+#define CONFIG_PS_ZERO_VOL_PT207			(500)  // 压力变送器为0时，输出电压值，单位mV
+#define CONFIG_PS_FULL_VOL_PT207			(2500) // 压力器变送器满量程时，输出电压值，单位mV
+#define CONFIG_PS_DEFAULT_RANGE_PT207		(2.5)  // 压力变送器默认量程，单位MPa
+#define CONFIG_PS_DEFAULT_LIMIT_PT207		(1.6)  // 压力变送器默认限压值，单位MPa
+#define CONFIG_PS_DEFAULT_OVER_TIME_PT207	(1)    // 压力变送器默认过压时间，单位秒
+
+/* 压力变送器  PT206----------------------------------------------------------------------------------- */
+#define CONFIG_PS_ZERO_VOL_PT206			(500)  // 压力变送器为0时，输出电压值，单位mV
+#define CONFIG_PS_FULL_VOL_PT206			(2500) // 压力器变送器满量程时，输出电压值，单位mV
+#define CONFIG_PS_DEFAULT_RANGE_PT206		(2.5)  // 压力变送器默认量程，单位MPa
+#define CONFIG_PS_DEFAULT_LIMIT_PT206		(1.6)  // 压力变送器默认限压值，单位MPa
+#define CONFIG_PS_DEFAULT_OVER_TIME_PT206	(1)    // 压力变送器默认过压时间，单位秒
+
+
+/* 温度变送器 ------------------------------------------------------------------------------------ */
+#define CONFIG_TP_ZERO_VOL			(500)  // 压力变送器为0时，输出电压值，单位mV
+#define CONFIG_TP_FULL_VOL			(2500) // 压力器变送器满量程时，输出电压值，单位mV
+#define CONFIG_TP_DEFAULT_RANGE		(300)  // 压力变送器默认量程，单位MPa
+#define CONFIG_TP_DEFAULT_LIMIT		(200)  // 压力变送器默认限压值，单位MPa
+#define CONFIG_TP_DEFAULT_OVER_TIME	(1)    // 压力变送器默认过压时间，单位秒
+
+
+// 流量计
+#define CONFIG_UART_FLOW	     (DRVID_UART_3)
+#define CONFIG_UART_FLOW_BAUD 	 (9600)
+#define CONFIG_UART_FLOW_PARITY    (kUART_PARITY_NONE)
+
 
 #endif /* INCLUDE_HQHP_CONFIG_H_ */

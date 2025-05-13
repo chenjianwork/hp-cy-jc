@@ -24,7 +24,7 @@ SOURCES += main.c
 
 ####################################################################################################
 
-
+#drvmanager
 ####################################################################################################
 SOURCES += drvmanager/drvmanager.c
 #SOURCES += drvmanager/drvmanager-adc.c
@@ -40,8 +40,36 @@ SOURCES += drvmanager/GPIO_manager.c
 SOURCES += drvmanager/PLC_code.c
 SOURCES += drvmanager/Data_Download_Flash.c
 SOURCES += drvmanager/ADC_Acquisition.c
-SOURCES += drvmanager/CAN_Communication.c
+#SOURCES += drvmanager/CAN_Communication.c
 SOURCES += drvmanager/Engine_Communication.c
+SOURCES += drvmanager/drvmanager-ads1120.c
+SOURCES += drvmanager/drvmanager-dac8552.c
+
+
+#sysmanager
+SOURCES += sysmanager/sysmanager.c
+SOURCES += sysmanager/sysmanager-blast.c
+SOURCES += sysmanager/sysmanager-idle.c
+
+SOURCES += sysmanager/sysmanager-running.c
+
+SOURCES += sysmanager/sysmanager-para.c
+
+#errmanager
+SOURCES += errmanager/errmanager.c
+
+
+#commanager
+SOURCES += commanager/commanager.c
+SOURCES += commanager/commanager-debug.c
+SOURCES += commanager/commanager-can.c
+SOURCES += commanager/commanager-vfd.c
+
+#devmanager
+SOURCES += devmanager/devmanager.c
+SOURCES += devmanager/devmanager-vfdpid.c
+SOURCES += devmanager/devmananger-ps.c
+
 ####################################################################################################
 SOURCES += lib/crypto/crc.c
 SOURCES += lib/crypto/crcdata.c

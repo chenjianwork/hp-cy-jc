@@ -7,9 +7,11 @@
 * 版权声明：All Rights Reserved.
 ****************************************************************************************************
 */
-#include "drvmanager.h"
+#include "drvmanager/drvmanager.h"
 #include "stm32f4xx.h"
-
+#include "stm32f4xx_gpio.h"
+#include "stm32f4xx_spi.h"
+#include "stm32f4xx_rcc.h"
 /*!
 ****************************************************************************************************
 * 常量定义
@@ -337,21 +339,6 @@ void DRVMGR_SPIHwInit(void)
 	SPI_Init(SPI1, &SPI_InitStructure);
 	SPI_Cmd(SPI1, ENABLE);
 
-	// SPI2
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-//	SPI_InitStructure.SPI_Direction			= SPI_Direction_2Lines_FullDuplex; // 数据方向：2线全双工
-//	SPI_InitStructure.SPI_Mode				= SPI_Mode_Master;				   // STM32的SPI工作模式 ：主机模式
-//	SPI_InitStructure.SPI_DataSize			= SPI_DataSize_8b;				   // 数据位长度 ： 8位
-//	SPI_InitStructure.SPI_CPOL				= SPI_CPOL_Low;					   // 时钟下降沿采样数据
-//	SPI_InitStructure.SPI_CPHA				= SPI_CPHA_1Edge;				   // 时钟的第1个边沿采样数据
-//	SPI_InitStructure.SPI_NSS				= SPI_NSS_Soft;					   // 片选控制方式：软件控制
-//	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;		   // 设置波特率预分频系数
-//	SPI_InitStructure.SPI_FirstBit			= SPI_FirstBit_MSB;				   // 数据位传输次序：高位先传
-//	SPI_InitStructure.SPI_CRCPolynomial		= 10;							   // CRC多项式寄存器
-//	SPI_Init(SPI2, &SPI_InitStructure);
-//	SPI_Cmd(SPI2, ENABLE);
-
-	//
 	// SPI3
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
 	SPI_InitStructure.SPI_Direction			= SPI_Direction_2Lines_FullDuplex; // 数据方向：2线全双工
@@ -379,8 +366,6 @@ void DRVMGR_SPIHwInit(void)
 static void DRVMGR_SPIHwPinInit(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-
-
 
 	// SPI1-SCK --> PA5
 	GPIO_InitStructure.GPIO_Pin	  = GPIO_Pin_5;
@@ -422,45 +407,6 @@ static void DRVMGR_SPIHwPinInit(void)
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	spi1_cs_H;
 
-//	// SPI2-SCK --> PB10
-//	GPIO_InitStructure.GPIO_Pin	  = GPIO_Pin_10;
-//	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-//	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-//	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-//	GPIO_Init(GPIOB, &GPIO_InitStructure);
-//	GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_SPI2);
-
-//	// SPI2-MISO --> PB14
-//	GPIO_InitStructure.GPIO_Pin	  = GPIO_Pin_14;
-//	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-//	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-//	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-//	GPIO_Init(GPIOB, &GPIO_InitStructure);
-//	GPIO_PinAFConfig(GPIOB, GPIO_PinSource14, GPIO_AF_SPI2);
-//
-//	// SPI2-MOSI --> PB15
-//	GPIO_InitStructure.GPIO_Pin	  = GPIO_Pin_15;
-//	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-//	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-//	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-//	GPIO_Init(GPIOB, &GPIO_InitStructure);
-//	GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_SPI2);
-//
-//	// SPI2-CS --> PE15
-//	GPIO_InitStructure.GPIO_Pin	  = GPIO_Pin_15;
-//	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
-//	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;
-//	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
-//	GPIO_Init(GPIOE, &GPIO_InitStructure);
-//	GPIO_ResetBits(GPIOE, GPIO_Pin_15);
 
 	// SPI3-SCK --> PC10
 	GPIO_InitStructure.GPIO_Pin	  = GPIO_Pin_10;
@@ -502,3 +448,9 @@ static void DRVMGR_SPIHwPinInit(void)
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
 	GPIO_ResetBits(GPIOD, GPIO_Pin_1 );
 }
+
+
+
+
+
+

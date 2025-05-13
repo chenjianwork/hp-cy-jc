@@ -10,7 +10,7 @@
 #include <string.h>
 #include <hqhp/drvmanager.h>
 #include <hqhp/crypto/crc.h>
-#include "drvmanager.h"
+#include "drvmanager/drvmanager.h"
 #include "stm32f4xx.h"
 
 /*!

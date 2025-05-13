@@ -4,7 +4,7 @@
  *  Created on: 2023年2月14日
  *      Author: liyan
  */
-#include "drvmanager.h"
+#include "drvmanager/drvmanager.h"
 #include "stm32f4xx.h"
 
 
@@ -106,6 +106,8 @@ unsigned char PLC_Prog_Code[12288]= { 0 };
 unsigned int CAN_ID_Num;//CAN ID 数量
 unsigned int cnt_send_numb;//本地发送CAN ID数量
 unsigned char Arbitration_CAN;//0:CAN1 1:CAN2
+unsigned char RunState_CAN;		//1:备机状态	//空闲或者备机完成
+
 unsigned int MASK_d,MASK_d1;
 unsigned int Arbitration_CANID_TX;//模块编号，同时也是在线帧CAN ID；
 

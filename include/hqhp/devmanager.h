@@ -67,19 +67,19 @@ enum {
 * 接口函数
 ****************************************************************************************************
 */
-void GPIOInit(void);
-void DEVMGR_Handle(void);
+void 	GPIOInit(void);
+void 	DEVMGR_Handle(void);
 
-void DEVMGR_AIInqChnValue(uint8_t aiGroup, float aiValues[16]);
+void 	DEVMGR_AIInqChnValue(uint8_t aiGroup, float aiValues[16]);
 
 uint16_t DEVMGR_DIGetBitsStatus(uint8_t diGroup);
-void	 DEVMGR_DOSetBitsStatus(uint8_t doGroup, uint16_t bitsStatus);
+void	DEVMGR_DOSetBitsStatus(uint8_t doGroup, uint16_t bitsStatus);
 
 uint16_t DEVMGR_W25QRdDeviceID(void);
-void	 DEVMGR_W25QRdBytes(uint32_t addr, uint8_t* data, size_t bytes);
-void	 DEVMGR_W25QWrBytes(uint32_t addr, const uint8_t* data, size_t bytes);
-void	 DEVMGR_W25QWrBytesWithCheck(uint32_t addr, const uint8_t* data, size_t bytes);
-void	 DEVMGR_W25QEraseSector(uint32_t Dst_Addr);
+void	DEVMGR_W25QRdBytes(uint32_t addr, uint8_t* data, size_t bytes);
+void	DEVMGR_W25QWrBytes(uint32_t addr, const uint8_t* data, size_t bytes);
+void	DEVMGR_W25QWrBytesWithCheck(uint32_t addr, const uint8_t* data, size_t bytes);
+void	DEVMGR_W25QEraseSector(uint32_t Dst_Addr);
 
 /*!
 ****************************************************************************************************

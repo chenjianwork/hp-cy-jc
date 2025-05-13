@@ -1,97 +1,129 @@
-/*
- * Data_Download_Flash.c
- *
- *  Created on: 2023年2月15日
- *      Author: liyan
- */
-
+/*!
+****************************************************************************************************
+* 文件名称：Data_Download_Flash.c
+* 功能简介：数据下载和Flash存储管理模块
+* 文件作者：liyan
+* 创建日期：2023年2月15日
+* 版权声明：All Rights Reserved.
+****************************************************************************************************
+*/
 #include <string.h>
 #include "stm32f4xx.h"
-#include "drvmanager.h"
+#include "stm32f4xx_flash.h"
+#include "drvmanager/drvmanager.h"
 #include <hqhp/config.h>
 
-#define TX_BUF_SIZE		  (32) // 发送数据缓存大小，单位字节
-#define RX_BUF_SIZE		  (32) // 接收数据缓存大小，单位字节
-#define RX_FBUF_SIZE	  (32) // 接收数据缓存大小，单位字节
-#define RX_FRAME_MIN_SIZE (6)	// 单次接收最小帧长度，单位字节
-#define RX_FRAME_MAX_SIZE (32) // 单次接收最大帧长度，单位字节
-#define RX_BYTE_TIMEOUT	  (100)	// 字节接收超时，单位毫秒
+/*!
+****************************************************************************************************
+* 常量定义
+****************************************************************************************************
+*/
+// 通信相关定义
+#define TX_BUF_SIZE           (32)    // 发送数据缓存大小，单位字节
+#define RX_BUF_SIZE           (32)    // 接收数据缓存大小，单位字节
+#define RX_FBUF_SIZE          (32)    // 接收数据缓存大小，单位字节
+#define RX_FRAME_MIN_SIZE     (6)     // 单次接收最小帧长度，单位字节
+#define RX_FRAME_MAX_SIZE     (32)    // 单次接收最大帧长度，单位字节
+#define RX_BYTE_TIMEOUT       (100)   // 字节接收超时，单位毫秒
 
-uint8_t DownLoad_Step;
-uint8_t analog_zj_Mode;//校准模式;
-uint16_t analog_zj_Chn_Flag;//模拟量校准通道标志
-uint8_t analog_zj_Complete_Flag;
-uint8_t Data_DownLoad_Complete_Flag;//数据下载完成标志;
-uint8_t	 txBuf_ACT[5]={0Xaa,0xcc,0x3c,0xc3,0x33};
-uint8_t	 txBuf_ACT_jz[6]={0Xaa,0xcc,0x00,0x3c,0xc3,0x33};
-uint32_t Len_DownLoad_Data;
-//异或校验
-unsigned char Flag_Download;
+// Flash存储相关定义
+#define DATA_FLASH_SAVE_NUM   (2)     // 存储数据个数
+#define FLASH_SAVE_ADDR       ADDR_FLASH_SECTOR_4  // 扇区有64kb的大小，一般存几个数据已经足够
 
-int Stored_TO_FLASH(void);
+// Flash扇区地址定义
+#define ADDR_FLASH_SECTOR_0   ((u32)0x08000000)   // 扇区0起始地址, 16 Kbytes
+#define ADDR_FLASH_SECTOR_1   ((u32)0x08004000)   // 扇区1起始地址, 16 Kbytes
+#define ADDR_FLASH_SECTOR_2   ((u32)0x08008000)   // 扇区2起始地址, 16 Kbytes
+#define ADDR_FLASH_SECTOR_3   ((u32)0x0800C000)   // 扇区3起始地址, 16 Kbytes   flag
+#define ADDR_FLASH_SECTOR_4   ((u32)0x08010000)   // 扇区4起始地址, 64 Kbytes   adc data
+#define ADDR_FLASH_SECTOR_5   ((u32)0x08020000)   // 扇区5起始地址, 128 Kbytes  PLC code
+#define ADDR_FLASH_SECTOR_6   ((u32)0x08040000)   // 扇区6起始地址, 128 Kbytes  APP
+#define ADDR_FLASH_SECTOR_7   ((u32)0x08060000)   // 扇区7起始地址, 128 Kbytes  APP
+#define ADDR_FLASH_SECTOR_8   ((u32)0x08080000)   // 扇区8起始地址, 128 Kbytes
+#define ADDR_FLASH_SECTOR_9   ((u32)0x080A0000)   // 扇区9起始地址, 128 Kbytes
+#define ADDR_FLASH_SECTOR_10  ((u32)0x080C0000)   // 扇区10起始地址,128 Kbytes
+#define ADDR_FLASH_SECTOR_11  ((u32)0x080E0000)   // 扇区11起始地址,128 Kbytes
+
+/*!
+****************************************************************************************************
+* 类型定义
+****************************************************************************************************
+*/
+// PLC管理结构体
+struct _PLC_MGR {
+    bool    IsOnline;          // 是否在线
+    bool    IsHasWrOperation;  // 是否有写操作
+    bool    HasFrame;          // 是否有帧
+    int     UARTIdx;           // UART索引
+    size_t  RxBytes;           // 接收字节数
+};
+
+/*!
+****************************************************************************************************
+* 全局变量
+****************************************************************************************************
+*/
+// 下载相关变量
+ uint8_t DownLoad_Step;                  // 下载步骤
+ uint8_t analog_zj_Mode;                 // 校准模式
+ uint16_t analog_zj_Chn_Flag;            // 模拟量校准通道标志
+ uint8_t analog_zj_Complete_Flag;        // 校准完成标志
+ uint8_t Data_DownLoad_Complete_Flag;    // 数据下载完成标志
+ uint32_t Len_DownLoad_Data;             // 下载数据长度
+ unsigned char Flag_Download;            // 下载标志
+ unsigned int RxBytes;
+// 通信缓冲区
+static uint8_t txBuf_ACT[5] = {0Xaa, 0xcc, 0x3c, 0xc3, 0x33};
+static uint8_t txBuf_ACT_jz[6] = {0Xaa, 0xcc, 0x00, 0x3c, 0xc3, 0x33};
+
+// 配置数据缓冲区
 extern unsigned char CAN_ID_Config_Inf[1024];
 extern unsigned char Module_Config_Inf[1024*12];
-extern unsigned char Analog_Config_Inf[1024];	//0:类型， 通道1：(1～4，最小参考值，5～8：最大参考值)......
+extern unsigned char Analog_Config_Inf[1024];  // 0:类型，通道1：(1～4，最小参考值，5～8：最大参考值)......
 extern unsigned char PLC_Prog_Code[1024];
 
-unsigned char jz_data[128];
-unsigned char jz_data_A[128];
-float jz_ADC_current[8];
-/*
- * Data_Arrays_Store[X][0],头数据：0xAA
- * Data_Arrays_Store[X][1],对应矩阵数组（Data_Arrays[x][y]）中的x,
- * Data_Arrays_Store[X][2]~Data_Arrays_Store[X][65],触摸屏下载的数据,4个字节一个对应一个数据
- *
- * */
-uint8_t Data_Arrays_Store[20][66];
+// 校准数据缓冲区
+ unsigned char jz_data[128];
+ unsigned char jz_data_A[128];
+ float jz_ADC_current[8];
 
-struct _PLC_MGR {
-	bool	IsOnline;
-	bool	IsHasWrOperation; // 是否有写操作
-	bool	HasFrame;
-	int		UARTIdx;
-	size_t	RxBytes;
-};
-unsigned int RxBytes;
+// 触摸屏数据存储
+static uint8_t Data_Arrays_Store[20][66];      // 触摸屏下载的数据存储数组
+
+// PLC管理实例
 static struct _PLC_MGR G_PLCMGR;
 
-#define DATA_FLASH_SAVE_NUM 2   //存储数据个数
+/*!
+****************************************************************************************************
+* 函数声明
+****************************************************************************************************
+*/
+// Flash操作函数
+static uint16_t STMFLASH_GetFlashSector(u32 addr);
+static int write_flash(uint8_t *FlashWriteBuf, uint32_t num, uint32_t StartAddr);
+static void read_flash(uint8_t *FlashReadBuf, uint32_t num, uint32_t StartAddr);
+ int Stored_TO_FLASH(void);
+ void Read_From_FLASH(void);
 
-#define FLASH_SAVE_ADDR  ADDR_FLASH_SECTOR_4    //扇区有64kb的大小 一般寸几个数据已经足够
-//FLASH 扇区的起始地址
-#define ADDR_FLASH_SECTOR_0     ((u32)0x08000000) 	//扇区0起始地址, 16 Kbytes
-#define ADDR_FLASH_SECTOR_1     ((u32)0x08004000) 	//扇区1起始地址, 16 Kbytes
-#define ADDR_FLASH_SECTOR_2     ((u32)0x08008000) 	//扇区2起始地址, 16 Kbytes
-#define ADDR_FLASH_SECTOR_3     ((u32)0x0800C000) 	//扇区3起始地址, 16 Kbytes   flag
-#define ADDR_FLASH_SECTOR_4     ((u32)0x08010000) 	//扇区4起始地址, 64 Kbytes   adc data
-#define ADDR_FLASH_SECTOR_5     ((u32)0x08020000) 	//扇区5起始地址, 128 Kbytes  PLC code
-#define ADDR_FLASH_SECTOR_6     ((u32)0x08040000) 	//扇区6起始地址, 128 Kbytes  APP
-#define ADDR_FLASH_SECTOR_7     ((u32)0x08060000) 	//扇区7起始地址, 128 Kbytes  APP
-#define ADDR_FLASH_SECTOR_8     ((u32)0x08080000) 	//扇区8起始地址, 128 Kbytes
-#define ADDR_FLASH_SECTOR_9     ((u32)0x080A0000) 	//扇区9起始地址, 128 Kbytes
-#define ADDR_FLASH_SECTOR_10    ((u32)0x080C0000) 	//扇区10起始地址,128 Kbytes
-#define ADDR_FLASH_SECTOR_11    ((u32)0x080E0000) 	//扇区11起始地址,128 Kbytes
+// 数据校验函数
+ unsigned char CheckXor(const char *strData, unsigned int len);
 
+// 数据存储函数
+ void Store_Data(void);
+ void Store_JZ_data(void);
+ void LCD_Data_Store(void);
+ void Read_JZ_LCD_data(void);
 
-uint16_t STMFLASH_GetFlashSector(u32 addr);
+// PLC通信函数
+ void TASKMGR_PLCInit(void);
+ void TASKMGR_PLCRxByteCallback(int idx, uint8_t data);
+ void DownLoad_Data_Deal(void);
 
-
-int write_flash(uint8_t *FlashWriteBuf,uint32_t num,uint32_t StartAddr);
-void read_flash(uint8_t *FlashReadBuf,uint32_t num,uint32_t StartAddr);
-
-uint16_t write_data[DATA_FLASH_SAVE_NUM];
-uint16_t read_data[DATA_FLASH_SAVE_NUM];
-
-unsigned char CheckXor(const char *strData,unsigned int len)
-{
-    char checksum = 0;
-    for (unsigned int i = 0;i < len;i++)
-    {
-        checksum = checksum ^ strData[i];
-    }
-    return (unsigned char)checksum;
-}
-
+/*!
+****************************************************************************************************
+* 函数实现
+****************************************************************************************************
+*/
 //通过地址获取扇区位置
 uint16_t STMFLASH_GetFlashSector(u32 addr)
 {
@@ -113,79 +145,73 @@ uint16_t STMFLASH_GetFlashSector(u32 addr)
 void Store_Data(void)
 {
 	unsigned int i,j;
-	//unsigned char checksum_results;
 	memset(SpecialRamBlock, 0, SPECIAL_RAM_BLOCK_SIZE);
 	FEED();
-   j=0;
-  for(i=0;i<1024;i++)
-   {
-    SpecialRamBlock[i]=CAN_ID_Config_Inf[j];
-	 j++;
+	j=0;
+	for(i=0;i<1024;i++)
+	{
+		SpecialRamBlock[i]=CAN_ID_Config_Inf[j];
+		j++;
 	}
-  j=0;
-  for(i=1024;i<2048;i++)
-   {
-    SpecialRamBlock[i]=Module_Config_Inf[j];
-	  j++;
+	j=0;
+	for(i=1024;i<2048;i++)
+	{
+		SpecialRamBlock[i]=Module_Config_Inf[j];
+		j++;
 	}
-  j=0;
-  for(i=2048;i<1024*3;i++)
-   {
-    SpecialRamBlock[i]=Analog_Config_Inf[j];
-	  j++;
+	j=0;
+	for(i=2048;i<1024*3;i++)
+	{
+		SpecialRamBlock[i]=Analog_Config_Inf[j];
+		j++;
 	}
-  j=0;
-  for(i=1024*3;i<1024*12;i++)
-   {
-    SpecialRamBlock[i]=PLC_Prog_Code[j];
-	  j++;
+	j=0;
+	for(i=1024*3;i<1024*12;i++)
+	{
+		SpecialRamBlock[i]=PLC_Prog_Code[j];
+		j++;
 	}
 	FEED();
-//  checksum_results=CheckXor(SpecialRamBlock,Len_CanIDConfiginf+Len_ModuleConfiginf+Len_AnalogConfiginf+Len_PLCProgCodef);
-//  SpecialRamBlock[Len_CanIDConfiginf+Len_ModuleConfiginf+Len_AnalogConfiginf+Len_PLCProgCodef+1]=checksum_results;
-
-  Flag_Download=Stored_TO_FLASH();
+	Flag_Download=Stored_TO_FLASH();
 	FEED();
-  memset(SpecialRamBlock, 0, SPECIAL_RAM_BLOCK_SIZE);
-  Init_USER_Code();
+	memset(SpecialRamBlock, 0, SPECIAL_RAM_BLOCK_SIZE);
+	Init_USER_Code();
 }
+
+
 /*从FLASH读出数据,并存放入相应的4个buf*/
 int Init_USER_Code(void)
 {
 	unsigned int i,j;
-	//unsigned char checksum_results;
-   j=0;
-   Read_From_FLASH();
-   //checksum_results=CheckXor(SpecialRamBlock,Len_CanIDConfiginf+Len_ModuleConfiginf+Len_AnalogConfiginf+Len_PLCProgCodef);
-//   if((SpecialRamBlock[Len_CanIDConfiginf+Len_ModuleConfiginf+Len_AnalogConfiginf+Len_PLCProgCodef+1])==checksum_results)
-//   {
-	   for(i=0;i<1024;i++)
-		{
-		 CAN_ID_Config_Inf[j]=SpecialRamBlock[i];
-		 j++;
-		}
-	   j=0;
-	   for(i=1024;i<2048;i++)
-		{
-		 Module_Config_Inf[j]=SpecialRamBlock[i];
-		 j++;
-		}
-	   j=0;
-	   for(i=2048;i<1024*3;i++)
-		{
-		 Analog_Config_Inf[j]=SpecialRamBlock[i];
-		 j++;
-		}
-	   j=0;
-	   for(i=1024*3;i<1024*12;i++)
-		{
-		 PLC_Prog_Code[j]=SpecialRamBlock[i];
-		 j++;
-		}
-	   return SUCCESS_t;
-//   }
-//   else
-//   return ERROR_t;
+
+	j=0;
+	Read_From_FLASH();
+
+	for(i=0;i<1024;i++)
+	{
+		CAN_ID_Config_Inf[j]=SpecialRamBlock[i];
+		j++;
+	}
+	j=0;
+	for(i=1024;i<2048;i++)
+	{
+		Module_Config_Inf[j]=SpecialRamBlock[i];
+		j++;
+	}
+	j=0;
+	for(i=2048;i<1024*3;i++)
+	{
+		Analog_Config_Inf[j]=SpecialRamBlock[i];
+		j++;
+	}
+	j=0;
+	for(i=1024*3;i<1024*12;i++)
+	{
+		PLC_Prog_Code[j]=SpecialRamBlock[i];
+		j++;
+	}
+	return SUCCESS_t;
+
 }
 //将数据写入内存 8位数据
 /*
@@ -550,26 +576,7 @@ void LCD_Data_Store(void)
 
 	}
 }
-/*
- * *把FLASH的触摸屏数据读取至矩阵数组中，
- */
-//void LCD_Data_Read(void)
-//{
-//	unsigned int i,j;
-//	unsigned char n=0;
-//	read_flash((uint8_t *)Data_Arrays_Store,1024,ADDR_FLASH_SECTOR_4);
-//	for(i=0;i<10;i++)
-//	{
-//		 if(Data_Arrays_Store[i][0]==0xAA)
-//		 {
-//			 n=Data_Arrays_Store[i][1];//在二维存储数组(Data_Arrays)对应位置
-//			 for(j=0;j<64;j++)
-//				 {
-//				 Data_Arrays[n][j]=Data_Arrays_Store[i][j+2];
-//				 }
-//		 }
-//	}
-//}
+
 /*写入数据到FLASH*/
 void Store_JZ_data(void)
 {
@@ -591,22 +598,6 @@ void Store_JZ_data(void)
 	Read_JZ_LCD_data();
 }
 
-/*写入数据到FLASH*/
-//void Read_JZ_data(void)
-//{
-//	unsigned char i;
-//	int jz_data_A_1[8];
-//	read_flash((uint8_t *)jz_data_A,128,ADDR_FLASH_SECTOR_8);
-//	for(i=0;i<8;i++)
-//	{
-//		jz_data_A_1[i]=(int32_t)((jz_data_A[i*4+0]<<0)|((jz_data_A[i*4+1]<<8)&0x0000FF00)|((jz_data_A[i*4+2]<<16)&0x00FF0000)|((jz_data_A[i*4+3]<<24)&0xFF000000));
-//		jz_ADC_current[i]=(float)(jz_data_A_1[i]/1000.00);
-//		if((jz_ADC_current[i]>2)||(jz_ADC_current[i]<-2))
-//	   {
-//		   jz_ADC_current[i]=0;
-//	   }
-//	}
-//}
 void Read_JZ_LCD_data(void)
 {
 	unsigned int i,j;
@@ -659,5 +650,10 @@ int EraseSector_test(void)
 	}
 
 }
+
+
+
+
+
 
 

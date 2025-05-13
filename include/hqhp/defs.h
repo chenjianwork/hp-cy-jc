@@ -55,6 +55,17 @@ extern "C" {
 * 类型定义
 ****************************************************************************************************
 */
+enum {
+	ERROR_NONE = 0,
+	ERROR_GENERIC,
+	ERROR_TIMEOUT,		   // 操作超时
+	ERROR_PARA_INVALID,	   // 参数无效
+	ERROR_FLASH_WR_FAILED, // FLASH写失败
+	ERROR_FLASH_RD_FAILED, // FLASH读失败
+	ERROR_BUSY,
+};
+
+
 union _IO_BIT08 {
 	uint8_t Value;
 	struct {

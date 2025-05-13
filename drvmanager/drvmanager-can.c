@@ -5,10 +5,16 @@
  *      Author: liyan
  */
 
-#include "drvmanager.h"
+#include "drvmanager/drvmanager.h"
 #include "stm32f4xx.h"
+#include "commanager/commanager.h"
+
 extern unsigned int MASK_d;
+
+
 static void DRVMGR_CANHwPinInit(void);
+
+
 void DRVMGR_CANInit(void)
 {
 	DRVMGR_CANHwPinInit();
