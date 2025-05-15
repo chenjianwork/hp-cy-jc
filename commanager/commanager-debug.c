@@ -37,7 +37,7 @@
 
 #define DBG_SLIP_FRAME_LEN_MIN	(4)
 #define DBG_SLIP_BUF_SIZE_MASK	(DBG_SLIP_BUF_SIZE - 1)
-#define DBG_FRAME_MAX_SIZE		(256) // 整个ADU大小限制为256个字节
+#define DBG_FRAME_MAX_SIZE		(65535) // 整个ADU大小限制为65535个字节
 #define DBG_FRAME_HEAD_SIZE		(4)
 #define DBG_FRAME_DATA_MAX_SIZE (DBG_FRAME_MAX_SIZE - DBG_FRAME_HEAD_SIZE)
 #define DBG_TIMEOUT_RESET		(1000) // 复位延时时间，单位毫秒
@@ -48,14 +48,27 @@
 * 类型定义
 ****************************************************************************************************
 */
+#pragma pack(1)
 
 struct _DBG_FRAME {
-	uint8_t PumpNo;					  // 枪号
-	uint8_t Sequence;				  // 流水号
-	uint8_t Command;				  // 命令字
-	uint8_t Len;					  // 长度
+//	uint8_t PumpNo;					  // 枪号
+//	uint8_t Sequence;				  // 流水号
+//	uint8_t Command;				  // 命令字
+//	uint8_t Len;					  // 长度
+
+    uint8_t Address;      // 目标地址
+    uint8_t LocalAddress; // 本地地址
+    uint8_t Version;      // 协议版本
+    uint8_t Sequence;     // 流水号
+    uint8_t Command;      // 命令字
+    uint8_t QoS;          // 服务等级
+    uint16_t Len;         // 消息长度
+
 	uint8_t Body[DBG_FRAME_MAX_SIZE]; // 数据
 };
+
+#pragma pack()
+
 typedef struct _DBG_FRAME* PDBG_FRAME;
 
 struct _DBG_SLIP {
@@ -117,7 +130,7 @@ static struct _DBG_MGR G_DBGMGR;
 */
 static void	  COMMGR_DBGSendFrame(const PDBG_FRAME, const uint8_t* data, size_t bytes);
 static void	  COMMGR_DBGRxProcess(PDBG_FRAME rxFrame);
-static void	  COMMGR_DBGRxByteCallback(uint8_t data);
+static void   COMMGR_DBGRxByteCallback(int idx,uint8_t data);
 static void	  COMMGR_DBGHandleGetFuleInfo(const PDBG_FRAME rxFrame);
 static void	  COMMGR_DBG_SLIP_Init(PDBG_SLIP slip);
 static bool	  COMMGR_DBG_SLIP_IsExistPackFrame(PDBG_SLIP slip);
@@ -184,20 +197,21 @@ void COMMGR_DBGHandle(void)
 * 本地函数
 ****************************************************************************************************
 */
-void COMMGR_DBGRxByteCallback(uint8_t data)
+static void COMMGR_DBGRxByteCallback(int idx,uint8_t data)
 {
 	static uint8_t rxBuffer[DBG_FRAME_MAX_SIZE];
 
+	if (idx != DRVID_UART_5) return;
 	// 重启接收字节超时定时器
 	COMMGR_DBG_SLIP_ParseFrame(&G_DBGMGR.Slip, data);
 	if (COMMGR_DBG_SLIP_IsExistParseFrame(&G_DBGMGR.Slip)) {
 		COMMGR_DBG_SLIP_GetParseFrame(&G_DBGMGR.Slip, &rxBuffer[0], sizeof(rxBuffer));
 		// 仅在上次帧已经处理的情况下进行处理
 		if (!G_DBGMGR.HasFrame) {
-			G_DBGMGR.RxFrame.PumpNo	  = rxBuffer[0]; // 接收地址
-			G_DBGMGR.RxFrame.Sequence = rxBuffer[1]; // 流水号
-			G_DBGMGR.RxFrame.Command  = rxBuffer[2]; // 命令字
-			G_DBGMGR.RxFrame.Len	  = rxBuffer[3]; // 数据长度
+			G_DBGMGR.RxFrame.LocalAddress	  = rxBuffer[0]; // 接收地址
+			G_DBGMGR.RxFrame.Sequence  		  = rxBuffer[1]; // 流水号
+			G_DBGMGR.RxFrame.Command  		  = rxBuffer[2]; // 命令字
+			G_DBGMGR.RxFrame.Len	          = rxBuffer[3]; // 数据长度
 			if (G_DBGMGR.RxFrame.Len <= DBG_FRAME_DATA_MAX_SIZE) {
 				G_DBGMGR.HasFrame = true;
 				memcpy(&G_DBGMGR.RxFrame.Body[0], &rxBuffer[4], G_DBGMGR.RxFrame.Len);
@@ -471,7 +485,7 @@ static void COMMGR_DBGSetPIDInfo(const PDBG_FRAME rxFrame)
 	rdIdx += 4;
 
 	// 写入参数到Flash
-	int err = SYSMGR_Write_Flash_Params(&gRUNPara, FLASH_PARA_SAVE_ADDR);
+	int err = SYSMGR_Write_Flash_Params(&gRUNPara, PARA_PID_SAVE_ADDR);
 	if (err) {
 		// 更新错误标志
 		ERRMGR_MajorErrorSet(MAJOR_ERR_PS_PARA_WR_FAILED);
@@ -498,12 +512,12 @@ static void COMMGR_DBGSetPIDInfo(const PDBG_FRAME rxFrame)
 */
 static void COMMGR_DBGHandleGetFuleInfo(const PDBG_FRAME rxFrame)
 {
-    uint8_t IR_Comm = 0;
+  //  uint8_t IR_Comm = 0;
     size_t  txLen;
     uint8_t txBuf[DBG_FRAME_MAX_SIZE];
     float PIDBuf[UP_PID_MAX];
 	uint8_t	 tpp, i;
-	tpp			   = SYSMGR_InqRunState();
+//	tpp			   = SYSMGR_InqRunState();
 
     /* 应答响应 --------------------------------------------------------------------------------- */
     txLen = 0;
@@ -858,25 +872,25 @@ static void COMMGR_DBG_InqPIDValue(uint8_t ID[UP_PID_MAX], float value[UP_PID_MA
     {
         switch (ID[i])
         {
-            case PID_SP:
+            case PID_PARAM_SP:
                 value[i] = SYSMGR_Running_InqPIDSP();
                 break;
-            case PID_ERR:
+            case PID_PARAM_ERR:
                 value[i] = SYSMGR_Running_InqPIDErr();
                 break;
-            case PID_OUTPUT:
+            case PID_PARAM_OUTPUT:
                 value[i] = SYSMGR_Running_InqPIDOutput();
                 break;
-            case PID_SUM:
+            case PID_PARAM_SUM:
                 value[i] = SYSMGR_Running_InqPIDSum();
                 break;
-            case PID_KP:
+            case PID_PARAM_KP_OUT:
                 value[i] = SYSMGR_Para_PIDKP();
                 break;
-            case PID_KI:
+            case PID_PARAM_KI_OUT:
                 value[i] = SYSMGR_Para_PIDKI();
                 break;
-            case PID_KD:
+            case PID_PARAM_KD_OUT:
                 value[i] = SYSMGR_Para_PIDKD();
                 break;
             default:

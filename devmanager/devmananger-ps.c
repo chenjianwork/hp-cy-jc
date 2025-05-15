@@ -139,7 +139,7 @@ int DEVMGR_PSRestoreDefaultPara(void)
 	gRUNPara.Limit_PT207 = CONFIG_PS_DEFAULT_LIMIT_PT207;	 // 限压值，单位MPa
 	gRUNPara.OverTime_PT207 = CONFIG_PS_DEFAULT_OVER_TIME_PT207; // 过压时间，单位秒
 
-	int err = SYSMGR_Write_Flash_Params(&gRUNPara, FLASH_PARA_SAVE_ADDR);
+	int err = SYSMGR_Write_Flash_Params(&gRUNPara, PARA_MAIN_SAVE_ADDR);
 	if (err) {
 		// 更新错误标志
 		ERRMGR_MajorErrorSet(MAJOR_ERR_PS_PARA_WR_FAILED);
@@ -257,7 +257,7 @@ int DEVMGR_PSSetLimit(float limit)
 
 	gRUNPara.Limit_PT207 = limit;
 
-	int err = SYSMGR_Write_Flash_Params(&gRUNPara, FLASH_PARA_SAVE_ADDR);
+	int err = SYSMGR_Write_Flash_Params(&gRUNPara, PARA_MAIN_SAVE_ADDR);
 	if (err) {
 		// 更新错误标志
 		ERRMGR_MajorErrorSet(MAJOR_ERR_PS_PARA_WR_FAILED);
@@ -303,7 +303,7 @@ int DEVMGR_PSSetPara(float range, float ratio, float delta, float limit)
 	gRUNPara.Delta_PT207 = delta;
 	gRUNPara.Limit_PT207 = limit;
 
-	int err = SYSMGR_Write_Flash_Params(&gRUNPara, FLASH_PARA_SAVE_ADDR);
+	int err = SYSMGR_Write_Flash_Params(&gRUNPara, PARA_MAIN_SAVE_ADDR);
 	if (err) {
 		// 更新错误标志
 		ERRMGR_MajorErrorSet(MAJOR_ERR_PS_PARA_WR_FAILED);

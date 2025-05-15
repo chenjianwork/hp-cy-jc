@@ -14,15 +14,33 @@
 /* ===== Global Variables ===== */
 uint8_t adc_rx_data[ADC_BUFFER_SIZE];
 uint8_t adc_tx_data[ADC_BUFFER_SIZE];
-ADS_CONV_STAS_IA_E ads_conv_status = ADS_CONV_STAS_IA_0_CFG;
-
-unsigned char Ads_stav = 0;           // 转换完成标志
-double Ads_vol_IA[4] = {0};          // 根据采样值计算出的电压([0]-J1 [1]-J2 [2]-J3 [3]-J4)-本安
-
 uint16_t Ads_sample[8];
 uint16_t Ads_sample_IA[4];
 uint16_t Ads_sample_D[4];
 uint16_t Ads_sample_11;
+
+
+unsigned char Ads_stav = 0;           // 转换完成标志
+double Ads_vol_IA[4] = {0};          // 根据采样值计算出的电压([0]-J1 [1]-J2 [2]-J3 [3]-J4)-本安
+
+
+
+ADS_CONV_STAS_IA_E ads_conv_status = ADS_CONV_STAS_IA_0_CFG;
+
+
+
+/* ===== Function Prototypes ===== */
+static void adc_set_channel(unsigned char channel);
+
+static void SPI_Write(unsigned char *outData, unsigned char length);
+static void SPI_WriteRead(unsigned char *outData, unsigned char *inData, unsigned char length);
+ void adc_buffer_clear(uint8_t buffer[]);
+static uint16_t adc_calculate_voltage(uint8_t msb, uint8_t lsb, unsigned char channel);
+static void adc_get_sample(void);
+//static double ADC_Cal_Val(double range, double *mV);
+
+
+
 
 // 全局数据存储
 double ADS1120_Raw[4];               // 当前采样值
@@ -32,7 +50,7 @@ double ADS1120_V[4];                 // 当前采样值
 #define FILTER_LEN 16  // 滤波点数
 
 #define REF_VOL		  (2500.0f) // 参考电压，单位mV
-#define ADC_BITS	  (12)		// ADC位数
+#define ADC_BITS	  (16)		// ADC位数
 
 // ADC管理器结构体
 struct _ADC_MGR {
@@ -89,15 +107,7 @@ uint8_t ADS1120_GetDRDY(void)
     return GPIO_ReadInputDataBit(SPI_DRDY_PORT, SPI_DRDY_PIN);
 }
 
-/* ===== Function Prototypes ===== */
-static void adc_set_channel(unsigned char channel);
 
-static void SPI_Write(unsigned char *outData, unsigned char length);
-static void SPI_WriteRead(unsigned char *outData, unsigned char *inData, unsigned char length);
- void adc_buffer_clear(uint8_t buffer[]);
-static uint16_t adc_calculate_voltage(uint8_t msb, uint8_t lsb, unsigned char channel);
-static void adc_get_sample(void);
-//static double ADC_Cal_Val(double range, double *mV);
 
 /* ===== SPI Communication Functions ===== */
 // 设置CS（片选）电平
@@ -294,7 +304,7 @@ static uint16_t adc_calculate_voltage(uint8_t msb, uint8_t lsb, unsigned char ch
     if (sample >= ADC_PRECISION) {
         sample = 0;
     }
-
+#if 0
     // 4. 更新采样计数（决定是否启用滑动滤波器）
     adc_mgr[channel].SampleCount++;
     if (adc_mgr[channel].SampleCount >= FILTER_LEN) {
@@ -314,7 +324,7 @@ static uint16_t adc_calculate_voltage(uint8_t msb, uint8_t lsb, unsigned char ch
         sum += adc_mgr[channel].LastValues[i];
     }
     sample = (uint16_t)(sum / adc_mgr[channel].SampleCount);
-
+#endif
     return sample;
 }
 
@@ -475,13 +485,28 @@ void ADS1120_Handle(void)
                 Ads_stav = 0;
                 adc_buffer_clear(adc_rx_data);
                 adc_get_sample();
-                adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 0); //处理通道0转换结果
+                uint16_t sampleValue = adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 0); //处理通道0转换结果
+    			// 更新采样次数（决定了是否启用滑动滤波器）
+                adc_mgr[0].SampleCount++;
+    			if (adc_mgr[0].SampleCount >= FILTER_LEN) {
+    				adc_mgr[0].Refresh	   = true;
+    				adc_mgr[0].SampleCount = FILTER_LEN;
+    			}
+
+    			// 更新采样值
+    			adc_mgr[0].LastValues[adc_mgr[0].WrIndex++] = sampleValue;
+    			if (adc_mgr[0].WrIndex >= FILTER_LEN) {
+    				adc_mgr[0].WrIndex = 0;
+    			}
+
                 ads_conv_status = ADS_CONV_STAS_IA_1_CFG;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }
             else if (DRVMGR_MSTimerIsExpiration(MSEC_TMR_ID_ADS_WAIT))
             {//等待通道转换结果出现超时
                 Ads_vol_IA[0] = 0; //转换超时,则数据清零
+                adc_mgr[0].SampleCount = 0;
+                adc_mgr[0].Refresh = false;
                 ads_conv_status = ADS_CONV_STAS_IA_1_CFG;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }
@@ -500,12 +525,26 @@ void ADS1120_Handle(void)
                 Ads_stav = 0;
                 adc_buffer_clear(adc_rx_data);
                 adc_get_sample();
+                uint16_t sampleValue = adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 1);
+                // 更新采样次数（决定了是否启用滑动滤波器）
+                adc_mgr[1].SampleCount++;
+    			if (adc_mgr[1].SampleCount >= FILTER_LEN) {
+    				adc_mgr[1].Refresh	   = true;
+    				adc_mgr[1].SampleCount = FILTER_LEN;
+    			}
+                // 更新采样值
+    			adc_mgr[1].LastValues[adc_mgr[1].WrIndex++] = sampleValue;
+    			if (adc_mgr[1].WrIndex >= FILTER_LEN) {
+    				adc_mgr[1].WrIndex = 0;
+    			}
                 ads_conv_status = ADS_CONV_STAS_IA_2_CFG;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }
             else if (DRVMGR_MSTimerIsExpiration(MSEC_TMR_ID_ADS_WAIT))
             {//等待通道转换结果出现超时
                 Ads_vol_IA[1] = 0; //转换超时,则数据清零
+                adc_mgr[1].SampleCount = 0;
+                adc_mgr[1].Refresh = false;
                 ads_conv_status = ADS_CONV_STAS_IA_2_CFG;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }
@@ -524,7 +563,20 @@ void ADS1120_Handle(void)
                 Ads_stav = 0;
                 adc_buffer_clear(adc_rx_data);
                 adc_get_sample();
-                adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 2);
+                uint16_t sampleValue = adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 2);
+                // 更新采样次数（决定了是否启用滑动滤波器）
+                adc_mgr[2].SampleCount++;
+    			if (adc_mgr[2].SampleCount >= FILTER_LEN) {
+    				adc_mgr[2].Refresh	   = true;
+    				adc_mgr[2].SampleCount = FILTER_LEN;
+    			}
+                // 更新采样值
+    			adc_mgr[2].LastValues[adc_mgr[2].WrIndex++] = sampleValue;
+    			if (adc_mgr[2].WrIndex >= FILTER_LEN) {
+    				adc_mgr[2].WrIndex = 0;
+    			}
+
+
             //    ADS1120_Gpio_Init();
              //   DAC8552_GPIO_Init();
             //    DRVMGR_TimerDelayUs(10);
@@ -534,9 +586,11 @@ void ADS1120_Handle(void)
                 ads_conv_status = ADS_CONV_STAS_IA_3_CFG;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }
-            else if (DRVMGR_MSTimerIsExpiration(MSEC_TMR_ID_ADS_WAIT))
+            else if (DRVMGR_MSTimerIsExpiration(MSEC_TMR_ID_ADS_WAIT))  
             {//等待通道转换结果出现超时
                 Ads_vol_IA[2] = 0; //转换超时,则数据清零
+                adc_mgr[2].SampleCount = 0;
+                adc_mgr[2].Refresh = false;
                 ads_conv_status = ADS_CONV_STAS_IA_3_CFG;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }
@@ -555,8 +609,19 @@ void ADS1120_Handle(void)
                 Ads_stav = 0;
                 adc_buffer_clear(adc_rx_data);
                 adc_get_sample();
-                adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 3); //处理通道3转换结果
+                uint16_t sampleValue = adc_calculate_voltage(adc_rx_data[0], adc_rx_data[1], 3); //处理通道3转换结果
 
+                // 更新采样次数（决定了是否启用滑动滤波器）
+                adc_mgr[3].SampleCount++;
+    			if (adc_mgr[3].SampleCount >= FILTER_LEN) {
+    				adc_mgr[3].Refresh	   = true;
+    				adc_mgr[3].SampleCount = FILTER_LEN;
+    			}
+                // 更新采样值
+    			adc_mgr[3].LastValues[adc_mgr[3].WrIndex++] = sampleValue;
+    			if (adc_mgr[3].WrIndex >= FILTER_LEN) {
+    				adc_mgr[3].WrIndex = 0;
+    			}
             //    ADS1120_Gpio_Init();
              //   DAC8552_GPIO_Init();
              //   DRVMGR_TimerDelayUs(10);
@@ -567,6 +632,8 @@ void ADS1120_Handle(void)
             else if (DRVMGR_MSTimerIsExpiration(MSEC_TMR_ID_ADS_WAIT))
             {//等待通道转换结果出现超时
                 Ads_vol_IA[3] = 0; //转换超时,则数据清零
+                adc_mgr[3].SampleCount = 0;
+                adc_mgr[3].Refresh = false;
                 ads_conv_status = ADS_CONV_STAS_IA_0_WAIT;
                 DRVMGR_MSTimerCancel(MSEC_TMR_ID_ADS_WAIT);
             }

@@ -7,13 +7,14 @@
 * 版权声明：All Rights Reserved.
 ****************************************************************************************************
 */
-#include <config.h>
+#include <hqhp/config.h>
 #include <string.h>
 #include <hqhp/crypto/crc.h>
+#include <sys/types.h>
 #include <hqhp/drvmanager.h>
-#include "commanager.h"
-#include "devmanager.h"
-
+#include "commanager/commanager.h"
+#include "devmanager/devmanager.h"
+#include "errmanager/errmanager.h"
 /*!
 ****************************************************************************************************
 * 常量定义
@@ -103,7 +104,7 @@ static const uint8_t gAddressTable[3][2] = {
 ****************************************************************************************************
 */
 static void DEVMGR_FlowTxProcess(void);
-static void DEVMGR_FlowRxByteCallback(uint8_t data);
+static void DEVMGR_FlowRxByteCallback(int idx, uint8_t data);
 static void DEVMGR_FlowRxProcess(uint8_t* data, uint16_t bytes);
 static void DEVMGR_FlowBytesToSingle(uint8_t endian, float *value, const uint8_t *data, ssize_t *index);
 
@@ -130,7 +131,7 @@ static void DEVMGR_FlowADSRxProcess(uint8_t *data, uint16_t bytes);
 */
 void DEVMGR_FlowInit(void)
 {
-	int i;
+//	int i;
 
 	gFLOW_MGR.Idx = 0;
 	gFLOW_MGR.Mode = MODE_WORK;
@@ -141,7 +142,7 @@ void DEVMGR_FlowInit(void)
 	gFLOW_MGR.Rx.Bytes	   = 0;
 	gFLOW_MGR.Rx.FrameLen  = 0;
 	gFLOW_MGR.IsFuelOnline = false;
-
+#if 0
 	// 读取配置参数
 	int err = DEVMGR_45DB081RDMajorWithChk(MEM_ADDR_FS, &gFLOW_PARA, sizeof(gFLOW_PARA));
 	if (err) {
@@ -151,8 +152,8 @@ void DEVMGR_FlowInit(void)
 		gFLOW_PARA.Type	 = DEVID_FLOW_ADS;
 		gFLOW_PARA.Limit = CONFIG_FS_DEFAULT_LIMIT;
 	}
-
-	DRVMGR_UARTInit(CONFIG_UART_FLOW, CONFIG_UART_FLOW_BAUD, CONFIG_UART_FLOW_PARITY);
+#endif
+	DRVMGR_UARTOpen(CONFIG_UART_FLOW, CONFIG_UART_FLOW_BAUD, CONFIG_UART_FLOW_PARITY);
 	DRVMGR_UARTSetRxCallback(CONFIG_UART_FLOW, DEVMGR_FlowRxByteCallback);
 
 	// 启动数据轮询定时器
@@ -244,6 +245,7 @@ int DEVMGR_FlowRestoreDefaultPara(void)
 {
 	// 设置默认值
 	gFLOW_PARA.Type	 = DEVID_FLOW_ADS;
+#if 0
 	gFLOW_PARA.Limit = CONFIG_FS_DEFAULT_LIMIT;
 	// 写入数据
 	int err = DEVMGR_45DB081WRWithChk(MEM_ADDR_FS, &gFLOW_PARA, sizeof(gFLOW_PARA));
@@ -252,7 +254,7 @@ int DEVMGR_FlowRestoreDefaultPara(void)
 		ERRMGR_MajorErrorSet(MAJOR_ERR_FS_PARA_WR_FAILED);
 		return ERROR_FLASH_WR_FAILED;
 	}
-
+#endif
 	return ERROR_NONE;
 }
 
@@ -314,6 +316,7 @@ int DEVMGR_FlowUpdateType(uint8_t type)
 
 	// 更新数据
 	gFLOW_PARA.Type = type;
+#if 0
 	// 写入数据
 	int err = DEVMGR_45DB081WRWithChk(MEM_ADDR_FS, &gFLOW_PARA, sizeof(gFLOW_PARA));
 	if (err) {
@@ -321,7 +324,7 @@ int DEVMGR_FlowUpdateType(uint8_t type)
 		ERRMGR_MajorErrorSet(MAJOR_ERR_FS_PARA_WR_FAILED);
 		return ERROR_FLASH_WR_FAILED;
 	}
-
+#endif
 	return ERROR_NONE;
 }
 
@@ -344,6 +347,7 @@ int DEVMGR_FlowUpdateLimit(float limit)
 
 	// 更新数据
 	gFLOW_PARA.Limit = limit;
+#if 0
 	// 写入数据
 	int err = DEVMGR_45DB081WRWithChk(MEM_ADDR_FS, &gFLOW_PARA, sizeof(gFLOW_PARA));
 	if (err) {
@@ -351,6 +355,7 @@ int DEVMGR_FlowUpdateLimit(float limit)
 		ERRMGR_MajorErrorSet(MAJOR_ERR_FS_PARA_WR_FAILED);
 		return ERROR_FLASH_WR_FAILED;
 	}
+#endif
 
 	return ERROR_NONE;
 }
@@ -371,6 +376,7 @@ int DEVMGR_FlowUpdatePara(uint8_t type, float limit)
 	// 更新数据
 	gFLOW_PARA.Type = type;
 	gFLOW_PARA.Limit = limit;
+#if 0
 	// 写入数据
 	int err = DEVMGR_45DB081WRWithChk(MEM_ADDR_FS, &gFLOW_PARA, sizeof(gFLOW_PARA));
 	if (err) {
@@ -378,7 +384,7 @@ int DEVMGR_FlowUpdatePara(uint8_t type, float limit)
 		ERRMGR_MajorErrorSet(MAJOR_ERR_FS_PARA_WR_FAILED);
 		return ERROR_FLASH_WR_FAILED;
 	}
-
+#endif
 	return ERROR_NONE;
 }
 
@@ -529,7 +535,7 @@ static void DEVMGR_FlowSetFuelOnline(void)
 * 返回参数：NA
 ****************************************************************************************************
 */
-static void DEVMGR_FlowRxByteCallback(uint8_t data)
+static void DEVMGR_FlowRxByteCallback(int idx, uint8_t data)
 {
 	uint8_t	 condition1; // 条件#1
 	uint8_t	 condition2; // 条件#2
@@ -747,6 +753,8 @@ static void DEVMGR_FlowMCTxProcess(void)
 		txBuf[txLen++] = (uint8_t) (crcResult >> 8);
 		DRVMGR_UARTSendBytes(CONFIG_UART_FLOW, txBuf, txLen);
 		// 根据计量模式更新设备地址
+		gFLOW_MGR.Idx = 0;
+#if 0
 		if (gRUNPara.machineType == 1) {
 			gFLOW_MGR.Idx = 0;
 		} else {
@@ -755,6 +763,7 @@ static void DEVMGR_FlowMCTxProcess(void)
 				gFLOW_MGR.Idx = 0;
 			}
 		}
+#endif
 		break;
 
 	// 清零模式 ------------------------------------------------------------------------------------
@@ -807,6 +816,8 @@ static void DEVMGR_FlowEHTxProcess(void)
 		txBuf[txLen++] = (uint8_t) (crcResult >> 8);
 		DRVMGR_UARTSendBytes(CONFIG_UART_FLOW, txBuf, txLen);
 		// 根据计量模式更新设备地址
+		gFLOW_MGR.Idx = 0;
+#if 0
 		if (gRUNPara.machineType == 1) {
 			gFLOW_MGR.Idx = 0;
 		} else {
@@ -815,6 +826,7 @@ static void DEVMGR_FlowEHTxProcess(void)
 				gFLOW_MGR.Idx = 0;
 			}
 		}
+#endif
 		break;
 
 	// 清零模式 ------------------------------------------------------------------------------------
@@ -866,6 +878,8 @@ static void DEVMGR_FlowADSTxProcess(void)
 		txBuf[txLen++] = (uint8_t) (crcResult);
 		txBuf[txLen++] = (uint8_t) (crcResult >> 8);
 		DRVMGR_UARTSendBytes(CONFIG_UART_FLOW, txBuf, txLen);
+		gFLOW_MGR.Idx = 0;
+#if 0
 		// 根据计量模式更新设备地址
 		if (gRUNPara.machineType == 1) {
 			gFLOW_MGR.Idx = 0;
@@ -875,6 +889,7 @@ static void DEVMGR_FlowADSTxProcess(void)
 				gFLOW_MGR.Idx = 0;
 			}
 		}
+#endif
 		break;
 
 	// 清零模式 ------------------------------------------------------------------------------------

@@ -37,8 +37,7 @@
 #define CMD_RESET_FAULT   0x0004  // 故障复位
 
 // 变频器参数
-#define VFD_FREQ_MAX_HZ   100.0f  // 变频器最大频率(Hz)
-#define VFD_FREQ_MIN_HZ   0.0f    // 变频器最小频率(Hz)
+
 #define VFD_FREQ_SCALE    10.0f   // 频率值放大倍数，用于保留小数位
 
 // 通信参数定义

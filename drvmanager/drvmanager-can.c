@@ -93,20 +93,17 @@ static void DRVMGR_CANHwPinInit(void)
     CAN_FilterInitStructure.CAN_FilterNumber=0;    //过滤器0
     CAN_FilterInitStructure.CAN_FilterMode=CAN_FilterMode_IdMask;     //屏蔽位模式
     CAN_FilterInitStructure.CAN_FilterScale=CAN_FilterScale_32bit;     //32位宽
-    /*
-    CAN_FilterInitStructure.CAN_FilterIdHigh=(bms_filter>>13)&0x0007;   // 取15~13  3位
-    CAN_FilterInitStructure.CAN_FilterIdLow=((bms_filter<<3)&0xFFFF)|CAN_ID_EXT;// 取12~0  13位
-    CAN_FilterInitStructure.CAN_FilterMaskIdHigh=0x0007; //32位MASK//0~15 左移3位变为 3~18 0x0FFFF<<3 = 0x7FFF8
-    CAN_FilterInitStructure.CAN_FilterMaskIdLow=0xFFF8|CAN_ID_EXT;
-    */
-    CAN_FilterInitStructure.CAN_FilterIdHigh        =((Store_CANID[0][1]<<3) >>16) &0xffff;;
-    CAN_FilterInitStructure.CAN_FilterIdLow            =((Store_CANID[0][1]<<3)&0xffff) | CAN_ID_EXT;;
-    CAN_FilterInitStructure.CAN_FilterMaskIdHigh=(MASK_d>>16)&0xffff;
-    CAN_FilterInitStructure.CAN_FilterMaskIdLow    =(MASK_d & 0xffff)|0x02;
-//      CAN_FilterInitStructure.CAN_FilterMaskIdHigh=0;
-//      CAN_FilterInitStructure.CAN_FilterMaskIdLow    =0;
     CAN_FilterInitStructure.CAN_FilterFIFOAssignment=CAN_Filter_FIFO0;//过滤器0关联到FIFO0
     CAN_FilterInitStructure.CAN_FilterActivation=ENABLE;//激活过滤器0
+
+    // 设置过滤器ID和掩码 - 使用0x2080作为基准ID
+    CAN_FilterInitStructure.CAN_FilterIdHigh = (0x2080 << 3) >> 16;    // 高16位
+    CAN_FilterInitStructure.CAN_FilterIdLow = ((0x2080 << 3) & 0xFFFF) | CAN_ID_EXT;  // 低16位
+
+    // 设置掩码 - 只匹配后12位(0x080)，其他位不关心
+    // 掩码为0xFFFFF000，表示高20位不关心，低12位必须匹配
+    CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0xFFFF;  // 高16位掩码
+    CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0xF000 | CAN_ID_EXT;  // 低16位掩码
 
     CAN_FilterInit(&CAN_FilterInitStructure);            //滤波器初始化
 
@@ -128,24 +125,20 @@ static void DRVMGR_CANHwPinInit(void)
     NVIC_Init(&NVIC_InitStructure);
     CAN_ITConfig(CAN1,CAN_IT_TME,ENABLE);
 
-    //滤波器配置
-    CAN_FilterInitStructure.CAN_FilterNumber=15;    //过滤器0
+    //滤波器配置 - CAN2
+    CAN_FilterInitStructure.CAN_FilterNumber=15;    //过滤器15
     CAN_FilterInitStructure.CAN_FilterMode=CAN_FilterMode_IdMask;     //屏蔽位模式
     CAN_FilterInitStructure.CAN_FilterScale=CAN_FilterScale_32bit;     //32位宽
-    /*
-    CAN_FilterInitStructure.CAN_FilterIdHigh=(bms_filter>>13)&0x0007;   // 取15~13  3位
-    CAN_FilterInitStructure.CAN_FilterIdLow=((bms_filter<<3)&0xFFFF)|CAN_ID_EXT;// 取12~0  13位
-    CAN_FilterInitStructure.CAN_FilterMaskIdHigh=0x0007; //32位MASK//0~15 左移3位变为 3~18 0x0FFFF<<3 = 0x7FFF8
-    CAN_FilterInitStructure.CAN_FilterMaskIdLow=0xFFF8|CAN_ID_EXT;
-    */
-    CAN_FilterInitStructure.CAN_FilterIdHigh        =((Store_CANID[0][1]<<3) >>16) &0xffff;;
-    CAN_FilterInitStructure.CAN_FilterIdLow            =((Store_CANID[0][1]<<3)&0xffff) | CAN_ID_EXT;;
-    CAN_FilterInitStructure.CAN_FilterMaskIdHigh=(MASK_d>>16)&0xffff;
-    CAN_FilterInitStructure.CAN_FilterMaskIdLow    =(MASK_d & 0xffff)|0x02;
-//      CAN_FilterInitStructure.CAN_FilterMaskIdHigh=0;
-//      CAN_FilterInitStructure.CAN_FilterMaskIdLow    =0;
-    CAN_FilterInitStructure.CAN_FilterFIFOAssignment=CAN_Filter_FIFO0;//过滤器0关联到FIFO0
-    CAN_FilterInitStructure.CAN_FilterActivation=ENABLE;//激活过滤器0
+    CAN_FilterInitStructure.CAN_FilterFIFOAssignment=CAN_Filter_FIFO0;//过滤器关联到FIFO0
+    CAN_FilterInitStructure.CAN_FilterActivation=ENABLE;//激活过滤器
+
+    // 使用相同的过滤器配置
+    CAN_FilterInitStructure.CAN_FilterIdHigh = (0x2080 << 3) >> 16;    // 高16位
+    CAN_FilterInitStructure.CAN_FilterIdLow = ((0x2080 << 3) & 0xFFFF) | CAN_ID_EXT;  // 低16位
+
+    // 设置掩码 - 只匹配后12位(0x080)，其他位不关心
+    CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0xFFFF;  // 高16位掩码
+    CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0xF000 | CAN_ID_EXT;  // 低16位掩码
 
     CAN_FilterInit(&CAN_FilterInitStructure);            //滤波器初始化
 

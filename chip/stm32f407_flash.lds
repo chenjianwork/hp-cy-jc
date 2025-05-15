@@ -136,17 +136,15 @@ SECTIONS
         __END_BSS = .;
     } > m_ramdata
 
-    .stack :
+    /* --- 把堆栈放到第二块 SRAM2 (m_ramdata2) --- */
+    .stack (COPY) : ALIGN(8)
     {
-        . = ALIGN(8);
-        . += STACK_SIZE;
-    } > m_ramdata
-
-    _estack = .;
-    __StackTop   = .;
-    __StackLimit = __StackTop - STACK_SIZE;
-    PROVIDE(__stack = __StackTop);
-
+        __StackLimit = .;        /* 栈底 */
+        . = . + STACK_SIZE;      /* 分配 STACK_SIZE 大小 */
+        __StackTop   = .;        /* 栈顶 */
+        _estack = .;
+        PROVIDE(__stack = __StackTop);
+    } > m_ramdata2
     .heap :
     {
         . = ALIGN(8);

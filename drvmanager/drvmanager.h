@@ -309,11 +309,18 @@ struct _TIMER1 {
 unsigned char CheckXor(const char *strData,unsigned int len);
 extern unsigned char Cycle_Flag;
 
-extern uint8_t DownLoad_Step;
-extern uint8_t Data_DownLoad_Complete_Flag;
-extern uint8_t analog_zj_Mode;
-extern uint8_t analog_zj_Complete_Flag;
-extern char res_CmdAnalyze,res_CAN_S;
+ char res_CmdAnalyze,res_CAN_S;
+// 下载相关变量
+ uint8_t DownLoad_Step;                  // 下载步骤
+ uint8_t analog_zj_Mode;                 // 校准模式
+ uint16_t analog_zj_Chn_Flag;            // 模拟量校准通道标志
+ uint8_t analog_zj_Complete_Flag;        // 校准完成标志
+ uint8_t Data_DownLoad_Complete_Flag;    // 数据下载完成标志
+ uint32_t Len_DownLoad_Data;             // 下载数据长度
+ unsigned char Flag_Download;            // 下载标志
+ unsigned int RxBytes;
+
+
 
 extern unsigned int CAN_ID_Num;//CAN ID 数量
 extern unsigned int cnt_send_numb;//本地发送CAN ID数量

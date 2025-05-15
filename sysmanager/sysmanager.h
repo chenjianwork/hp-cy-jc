@@ -22,14 +22,32 @@
 #include "stm32f4xx.h"
 
 
+// Flash扇区地址定义
+#define ADDR_FLASH_SECTOR_0   ((u32)0x08000000)   // 扇区0起始地址, 16 Kbytes
+#define ADDR_FLASH_SECTOR_1   ((u32)0x08004000)   // 扇区1起始地址, 16 Kbytes
+#define ADDR_FLASH_SECTOR_2   ((u32)0x08008000)   // 扇区2起始地址, 16 Kbytes
+#define ADDR_FLASH_SECTOR_3   ((u32)0x0800C000)   // 扇区3起始地址, 16 Kbytes   flag
+#define ADDR_FLASH_SECTOR_4   ((u32)0x08010000)   // 扇区4起始地址, 64 Kbytes   adc data
+#define ADDR_FLASH_SECTOR_5   ((u32)0x08020000)   // 扇区5起始地址, 128 Kbytes  PLC code
+#define ADDR_FLASH_SECTOR_6   ((u32)0x08040000)   // 扇区6起始地址, 128 Kbytes  APP
+#define ADDR_FLASH_SECTOR_7   ((u32)0x08060000)   // 扇区7起始地址, 128 Kbytes  APP
+#define ADDR_FLASH_SECTOR_8   ((u32)0x08080000)   // 扇区8起始地址, 128 Kbytes
+#define ADDR_FLASH_SECTOR_9   ((u32)0x080A0000)   // 扇区9起始地址, 128 Kbytes
+#define ADDR_FLASH_SECTOR_10  ((u32)0x080C0000)   // 扇区10起始地址,128 Kbytes
+#define ADDR_FLASH_SECTOR_11  ((u32)0x080E0000)   // 扇区11起始地址,128 Kbytes
 
-#define ADDR_FLASH_SECTOR_6     ((u32)0x08040000) 	//扇区6起始地址, 128 Kbytes  APP
 
-#define FLASH_PARA_SAVE_ADDR  ADDR_FLASH_SECTOR_6
-#define PRESSURE_REDUCE_GAIN  (75)  //减压阀放大倍数
+// Flash存储相关定义
+#define DATA_FLASH_SAVE_NUM   (2)     // 存储数据个数
+#define FLASH_SAVE_ADDR       ADDR_FLASH_SECTOR_4  // 扇区有64kb的大小，一般存几个数据已经足够
+#define PARA_PID_SAVE_ADDR    ADDR_FLASH_SECTOR_6	//PID参数存储位置
+#define PARA_MAIN_SAVE_ADDR   ADDR_FLASH_SECTOR_7	//其他主要参数存储
 
-#define PROPORT_VALVE_WORK_MAX  (VREFIN/SAMPLE_R)//比例阀最大工作电流,约20mA
-#define PROPORT_VALVE_WORK_MIN  (4)   //比例阀最小工作电流4mA
+
+//#define PRESSURE_REDUCE_GAIN  (75)  //减压阀放大倍数
+
+//#define PROPORT_VALVE_WORK_MAX  (VREFIN/SAMPLE_R)//比例阀最大工作电流,约20mA
+//#define PROPORT_VALVE_WORK_MIN  (4)   //比例阀最小工作电流4mA
 
 // 运行状态 ------------------------------------------------------------------------------------- //
 enum {
@@ -95,8 +113,6 @@ struct MEOH_DATA {
 
 uint16_t DATA_REC_COMPLETE1,DATA_REC_COMPLETE2;
 unsigned int Digital_Input_Data;
-char res_CmdAnalyze,res_CAN_S;
-extern unsigned int RxBytes;
 extern void DRVMGR_TimerDelayUs(uint16_t us);
 _Engine_DATA Engine_Parameter_Host;
 _Engine_DATA Engine_Parameter_Auxiliary_1;

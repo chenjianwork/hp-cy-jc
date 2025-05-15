@@ -69,7 +69,7 @@ SOURCES += commanager/commanager-vfd.c
 SOURCES += devmanager/devmanager.c
 SOURCES += devmanager/devmanager-vfdpid.c
 SOURCES += devmanager/devmananger-ps.c
-
+SOURCES += devmanager/devmanager-flow.c
 ####################################################################################################
 SOURCES += lib/crypto/crc.c
 SOURCES += lib/crypto/crcdata.c

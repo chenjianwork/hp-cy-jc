@@ -14,20 +14,7 @@
 * 常量定义
 ****************************************************************************************************
 */
-// 时间相关常量
-#define RUNSTATE_CHECK_ONLINE_TIME  1000    // 运行状态检查时间(ms)
-#define PID_PERIOD                  100     // PID计算周期(ms)
 
-// 压力控制相关常量
-#define PRESSURE_SP                 0.8f    // 压力设定值(MPa)
-#define PRESSURE_CHANGE_THRESHOLD   0.1f    // 压力变化阈值(MPa)
-
-// 输出限制相关常量
-#define VALVE_CURRENT_MIN          4.0f    // 阀门最小输出电流(mA)
-#define VALVE_CURRENT_MAX          20.0f   // 阀门最大输出电流(mA)
-#define VFD_FREQ_BASE              50.0f   // 变频器基础频率(Hz)
-#define VFD_FREQ_MIN_HZ            0.0f    // 变频器最小频率(Hz)
-#define VFD_FREQ_MAX_HZ            100.0f  // 变频器最大频率(Hz)
 
 /**
 ****************************************************************************************************
@@ -83,7 +70,7 @@ bool SYSMGR_RunningInit(void)
 	gWorkInfo.ValveSetPoint = 0.0f;
 
 	// 初始化级联PID控制器
-	PID_InitCascade(&gWorkInfo.OuterPID,    // 外环PID(压力环)
+	DEVMGR_PID_InitCascade(&gWorkInfo.OuterPID,    // 外环PID(压力环)
 				   &gWorkInfo.InnerPID,     // 内环PID(频率环)
 				   2.0f,   // 外环比例系数
 				   0.1f,   // 外环积分系数
@@ -173,7 +160,7 @@ static void SYSMGR_RunningPIDCtl(void)
 	}
 
 	// 计算级联PID控制输出
-	float valve_sp = PID_ComputeCascade(
+	float valve_sp = DEVMGR_PID_ComputeCascade(
 		&gWorkInfo.OuterPID,    // 外环PID(压力环)
 		&gWorkInfo.InnerPID,    // 内环PID(频率环)
 		PRESSURE_SP,            // 压力设定值

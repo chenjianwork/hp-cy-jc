@@ -11,6 +11,7 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_flash.h"
 #include "drvmanager/drvmanager.h"
+#include "sysmanager/sysmanager.h"
 #include <hqhp/config.h>
 
 /*!
@@ -25,24 +26,6 @@
 #define RX_FRAME_MIN_SIZE     (6)     // 单次接收最小帧长度，单位字节
 #define RX_FRAME_MAX_SIZE     (32)    // 单次接收最大帧长度，单位字节
 #define RX_BYTE_TIMEOUT       (100)   // 字节接收超时，单位毫秒
-
-// Flash存储相关定义
-#define DATA_FLASH_SAVE_NUM   (2)     // 存储数据个数
-#define FLASH_SAVE_ADDR       ADDR_FLASH_SECTOR_4  // 扇区有64kb的大小，一般存几个数据已经足够
-
-// Flash扇区地址定义
-#define ADDR_FLASH_SECTOR_0   ((u32)0x08000000)   // 扇区0起始地址, 16 Kbytes
-#define ADDR_FLASH_SECTOR_1   ((u32)0x08004000)   // 扇区1起始地址, 16 Kbytes
-#define ADDR_FLASH_SECTOR_2   ((u32)0x08008000)   // 扇区2起始地址, 16 Kbytes
-#define ADDR_FLASH_SECTOR_3   ((u32)0x0800C000)   // 扇区3起始地址, 16 Kbytes   flag
-#define ADDR_FLASH_SECTOR_4   ((u32)0x08010000)   // 扇区4起始地址, 64 Kbytes   adc data
-#define ADDR_FLASH_SECTOR_5   ((u32)0x08020000)   // 扇区5起始地址, 128 Kbytes  PLC code
-#define ADDR_FLASH_SECTOR_6   ((u32)0x08040000)   // 扇区6起始地址, 128 Kbytes  APP
-#define ADDR_FLASH_SECTOR_7   ((u32)0x08060000)   // 扇区7起始地址, 128 Kbytes  APP
-#define ADDR_FLASH_SECTOR_8   ((u32)0x08080000)   // 扇区8起始地址, 128 Kbytes
-#define ADDR_FLASH_SECTOR_9   ((u32)0x080A0000)   // 扇区9起始地址, 128 Kbytes
-#define ADDR_FLASH_SECTOR_10  ((u32)0x080C0000)   // 扇区10起始地址,128 Kbytes
-#define ADDR_FLASH_SECTOR_11  ((u32)0x080E0000)   // 扇区11起始地址,128 Kbytes
 
 /*!
 ****************************************************************************************************
@@ -63,15 +46,7 @@ struct _PLC_MGR {
 * 全局变量
 ****************************************************************************************************
 */
-// 下载相关变量
- uint8_t DownLoad_Step;                  // 下载步骤
- uint8_t analog_zj_Mode;                 // 校准模式
- uint16_t analog_zj_Chn_Flag;            // 模拟量校准通道标志
- uint8_t analog_zj_Complete_Flag;        // 校准完成标志
- uint8_t Data_DownLoad_Complete_Flag;    // 数据下载完成标志
- uint32_t Len_DownLoad_Data;             // 下载数据长度
- unsigned char Flag_Download;            // 下载标志
- unsigned int RxBytes;
+
 // 通信缓冲区
 static uint8_t txBuf_ACT[5] = {0Xaa, 0xcc, 0x3c, 0xc3, 0x33};
 static uint8_t txBuf_ACT_jz[6] = {0Xaa, 0xcc, 0x00, 0x3c, 0xc3, 0x33};

@@ -35,6 +35,8 @@ CanTxMsg CanTxMsg_DigitVar;//本地中间变量消息盒
 CanTxMsg Can_Online_Frame_can1;//CAN总线在线帧
 CanTxMsg Can_Online_Frame_can2;//CAN总线在线帧
 
+
+
 //本地中间变量消息盒
 unsigned char iAcnt;
 unsigned char Stored_Data_Address[50];//需要存储到Flash的数据的位置
@@ -68,30 +70,20 @@ struct _WORK_INFO {
 */
 static struct _CAN_MGR G_CANMGR;
 static struct _WORK_INFO gWorkInfo;
-/*!
-****************************************************************************************************
-* 功能描述：该方法用于初始化调试通信模块
-* 注意事项：在调用其他方法前，必须先调用该方法
-* 输入参数：NA
-* 输出参数：NA
-* 返回参数：NA
-****************************************************************************************************
-*/
+/**
+ * @brief 该方法用于初始化调试通信模块
+ * @note 在调用其他方法前，必须先调用该方法
+ */
 void COMMGR_CANInit(void)
 {
 	G_CANMGR.rst_bit62	   = 0;
 	DRVMGR_MSTimerStart(MS_TMR_ID_100MS, 100);
 }
 
-/*!
-****************************************************************************************************
-* 功能描述：该方法用于周期处理调试模块事务
-* 注意事项：在调用其他方法前，必须先调用该方法
-* 输入参数：NA
-* 输出参数：NA
-* 返回参数：NA
-****************************************************************************************************
-*/
+/**
+ * @brief 该方法用于周期处理调试模块事务
+ * @note 在调用其他方法前，必须先调用该方法
+ */
 void COMMGR_CANHandle(void)
 {
 	if (DRVMGR_MSTimerIsExpiration(MS_TMR_ID_100MS))
@@ -116,6 +108,9 @@ void COMMGR_CANHandle(void)
 	}
 }
 
+/**
+ * @brief CAN1总线数据发送函数
+ */
 void CAN1_tx_data(void)
 {
 	uint8_t fifo;
@@ -204,6 +199,9 @@ void CAN1_tx_data(void)
 
 }
 
+/**
+ * @brief CAN2总线数据发送函数
+ */
 void CAN2_tx_data(void)
 {
 	uint8_t fifo;
@@ -288,8 +286,8 @@ void CAN2_tx_data(void)
 		}
 }
 
-/*
- *CAN1数据接收处理
+/**
+ * @brief CAN1数据接收处理函数
  */
 void CAN1_rx_data(void)
 {
@@ -340,8 +338,8 @@ void CAN1_rx_data(void)
 
 	}
 }
-/*
- *CAN2数据接收处理函数
+/**
+ * @brief CAN2数据接收处理函数
  */
 void CAN2_rx_data(void)
 {
@@ -367,8 +365,6 @@ void CAN2_rx_data(void)
 			gWorkInfo.RunState_CAN = 0;		//设置为空闲状态
 		}
 	}	
-
-#if 0
 	else
 	{
 		for(j=0;j<(CAN_ID_Num-cnt_send_numb);j++)
@@ -402,12 +398,13 @@ void CAN2_rx_data(void)
 			    }
 		}
 	}
-#endif
 
 }
-/*CAN总线数据错误检测
- * 同时检测2路CAN总线错误计数,当检测某一路错误超过256个时，切换至另外一条CAN总线。
- * */
+/**
+ * @brief CAN总线数据错误检测
+ * @note 同时检测2路CAN总线错误计数,当检测某一路错误超过256个时，切换至另外一条CAN总线。
+ * @return char - 返回状态: 0表示无错误，1表示CAN1错误，2表示CAN2错误
+ */
 char Scan_Can_err(void)
 {
 	unsigned int counter_tx_err_1,counter_rx_err_1,counter_tx_err_2,counter_rx_err_2;
@@ -437,8 +434,9 @@ char Scan_Can_err(void)
 	return state;//返回状态
 }
 
-/*
- * CAN总线切换
+/**
+ * @brief CAN总线发送数据切换函数
+ * @note 根据Arbitration_CAN的值选择CAN1或CAN2发送数据
  */
 void CAN_send_data(void)
 {
@@ -451,8 +449,8 @@ void CAN_send_data(void)
 		CAN1_tx_data();
 	}
 }
-/*
- * 本地发送数据消息盒初始化
+/**
+ * @brief 本地发送数据消息盒初始化函数
  */
 void CAN_Frame_init(void)
 {
@@ -475,8 +473,8 @@ void CAN_Frame_init(void)
 	CanTxMsg_DigitVar.DLC=8;
 
 }
-/*
- * CAN总线在线帧
+/**
+ * @brief CAN总线在线帧发送函数
  */
 void CAN_Send_OnLine(void)
 {
@@ -517,15 +515,11 @@ void CAN_Send_OnLine(void)
 
 }
 
-/*!
-****************************************************************************************************
-* 功能描述：获取CAN总线运行状态
-* 注意事项：NA
-* 输入参数：NA
-* 输出参数：NA
-* 返回参数：0 - 空闲状态，1 - 备机状态
-****************************************************************************************************
-*/
+/**
+ * @brief 获取CAN总线运行状态
+ * @note NA
+ * @return uint8_t - 0 - 空闲状态，1 - 备机状态
+ */
 uint8_t COMMGR_GetRunStateCAN(void)
 {
     return gWorkInfo.RunState_CAN;
